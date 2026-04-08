@@ -1,0 +1,25 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: supplychain-worker
+
+  # TECH DEBT: Hardcoded credentials
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+
+# Application configuration
+app:
+  messaging:
+    queue:
+      order-created: order.created
+      inventory-alert: inventory.alert
+      approval-pending: approval.pending
+
+logging:
+  level:
+    com.acme.scm: INFO
