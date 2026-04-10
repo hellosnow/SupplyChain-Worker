@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * TECH DEBT SUMMARY:
  * - Java 17 LTS ✅
  * - Spring Boot 3.x ✅ (migrated from 2.7.18)
- * - RabbitMQ 3.6 (should migrate to Azure Service Bus with custom messaging API)
+ * - Azure Service Bus ✅ (migrated from legacy message broker)
  * - SLF4J logging (should use InternalLogger)
  */
 @SpringBootApplication

@@ -5,12 +5,14 @@ spring:
   application:
     name: supplychain-worker
 
-  # TECH DEBT: Hardcoded credentials
-  rabbitmq:
-    host: rabbitmq
-    port: 5672
-    username: guest
-    password: guest
+  cloud:
+    azure:
+      credential:
+        managed-identity-enabled: true
+        client-id: ${AZURE_CLIENT_ID}
+      servicebus:
+        entity-type: queue
+        namespace: ${SERVICE_BUS_NAMESPACE}
 
 # Application configuration
 app:
