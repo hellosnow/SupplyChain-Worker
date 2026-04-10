@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "1.0",
+  "project": "supplychain-worker",
+  "generatedAt": "2026-04-10T05:10:00Z",
+  "generatedFrom": ".github/modernize/SupplyChain-Worker/assessment.yaml",
+  "totalTasks": 8,
+  "totalEstimatedEffort": 39,
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Foundation — Java Version Upgrade",
+      "order": 1,
+      "description": "Upgrade Java 8 to Java 17 LTS. This is a blocker for all subsequent tasks since Spring Boot 3.x requires Java 17+."
+    },
+    {
+      "id": "phase-2",
+      "name": "Framework — Spring Boot 3.x Upgrade",
+      "order": 2,
+      "description": "Upgrade Spring Boot 2.7.18 to 3.2.x, which brings Spring Framework 6.x transitively and requires javax → jakarta namespace migration."
+    },
+    {
+      "id": "phase-3",
+      "name": "Azure Migration — Messaging",
+      "order": 3,
+      "description": "Migrate from RabbitMQ to Azure Service Bus for fully managed messaging on Azure."
+    },
+    {
+      "id": "phase-4",
+      "name": "Security — Credential Management",
+      "order": 4,
+      "description": "Remove hardcoded credentials and migrate to Azure Key Vault or Managed Identity for passwordless connections."
+    },
+    {
+      "id": "phase-5",
+      "name": "Containerization — Dockerfile Update",
+      "order": 5,
+      "description": "Update Dockerfile base images to match the upgraded Java version and follow container best practices."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-1-java-upgrade",
+      "phase": "phase-1",
+      "type": "upgrade",
+      "skill": "builtin:java-version-upgrade",
+      "title": "Upgrade Java 8 → Java 17 LTS",
+      "priority": 1,
+      "severity": "mandatory",
+      "effort": 5,
+      "dependsOn": [],
+      "ruleIds": ["azure-java-version-02000"],
+      "target": {
+        "java_version": "17",
+        "current_version": "8"
+      },
+      "description": "Upgrade from Java 8 to Java 17 LTS. Update pom.xml properties (java.version, maven.compiler.source, maven.compiler.target) from 8 to 17. This is a blocker for Spring Boot 3.x which requires Java 17+.",
+      "filesToModify": [
+        "pom.xml"
+      ],
+      "changes": [
+        "Update <java.version>8</java.version> → <java.version>17</java.version>",
+        "Update <maven.compiler.source>8</maven.compiler.source> → <maven.compiler.source>17</maven.compiler.source>",
+        "Update <maven.compiler.target>8</maven.compiler.target> → <maven.compiler.target>17</maven.compiler.target>",
+        "Review code for removed/deprecated Java APIs (no issues expected for this small codebase)"
+      ],
+      "successCriteria": "Project compiles successfully with Java 17. All existing tests pass.",
+      "status": "pending"
+    },
+    {
+      "id": "task-2-springboot-upgrade",
+      "phase": "phase-2",
+      "type": "upgrade",
+      "skill": "builtin:spring-boot-upgrade",
+      "title": "Upgrade Spring Boot 2.7.18 → Spring Boot 3.2.x",
+      "priority": 2,
+      "severity": "mandatory",
+      "effort": 8,
+      "dependsOn": ["task-1-java-upgrade"],
+      "ruleIds": [
+        "spring-boot-to-azure-spring-boot-version-01000",
+        "spring-framework-version-01000"
+      ],
+      "target": {
+        "spring_boot_version": "3.2.x",
+        "current_version": "2.7.18"
+      },
+      "description": "Upgrade Spring Boot from 2.7.18 to 3.2.x. This also resolves the Spring Framework 5.x → 6.x upgrade transitively. Requires javax → jakarta namespace migration for any Jakarta EE APIs used.",
+      "filesToModify": [
+        "pom.xml",
+        "src/main/java/com/acme/scm/worker/SupplyChainWorkerApplication.java",
+        "src/main/java/com/acme/scm/worker/listener/OrderMessageListener.java"
+      ],
+      "changes": [
+        "Update spring-boot-starter-parent version from 2.7.18 to 3.2.x in pom.xml",
+        "Migrate javax.* imports to jakarta.* if present in source files",
+        "Update any deprecated Spring Boot 2.x APIs to 3.x equivalents",
+        "Verify spring-boot-starter-amqp compatibility with Spring Boot 3.x",
+        "Update spring-boot-maven-plugin configuration if needed",
+        "Run full test suite to validate the upgrade"
+      ],
+      "successCriteria": "Project compiles and all tests pass with Spring Boot 3.2.x. Application starts successfully.",
+      "status": "pending"
+    },
+    {
+      "id": "task-3-rabbitmq-to-servicebus",
+      "phase": "phase-3",
+      "type": "migration",
+      "skill": "appmod:rabbitmq-to-azure-servicebus",
+      "title": "Migrate RabbitMQ → Azure Service Bus",
+      "priority": 3,
+      "severity": "optional",
+      "effort": 5,
+      "dependsOn": ["task-2-springboot-upgrade"],
+      "ruleIds": [
+        "azure-message-queue-rabbitmq-01000",
+        "azure-message-queue-amqp-02000"
+      ],
+      "target": {
+        "from": "RabbitMQ (spring-boot-starter-amqp)",
+        "to": "Azure Service Bus (spring-cloud-azure-starter-servicebus-jms)"
+      },
+      "description": "Replace RabbitMQ with Azure Service Bus for managed messaging on Azure. Replace spring-boot-starter-amqp with Spring Cloud Azure Service Bus integration. Migrate 3 queues: order.created, inventory.alert, approval.pending.",
+      "filesToModify": [
+        "pom.xml",
+        "src/main/java/com/acme/scm/worker/listener/OrderMessageListener.java",
+        "src/main/resources/application.yml"
+      ],
+      "changes": [
+        "Replace spring-boot-starter-amqp dependency with spring-cloud-azure-starter-servicebus-jms in pom.xml",
+        "Add Spring Cloud Azure BOM for dependency management",
+        "Rewrite OrderMessageListener.java: replace @RabbitListener with @JmsListener (or Service Bus SDK annotations)",
+        "Update application.yml: remove spring.rabbitmq.* config, add spring.cloud.azure.servicebus.* config",
+        "Map RabbitMQ queues to Azure Service Bus queues: order.created, inventory.alert, approval.pending",
+        "Add Azure Service Bus connection configuration (namespace, connection-string placeholder)"
+      ],
+      "successCriteria": "Application compiles with Azure Service Bus dependencies. Message listener annotations updated. Configuration points to Azure Service Bus.",
+      "status": "pending"
+    },
+    {
+      "id": "task-4-secure-credentials",
+      "phase": "phase-4",
+      "type": "security",
+      "skill": "appmod:credential-to-keyvault",
+      "title": "Remove Hardcoded Credentials → Azure Key Vault / Managed Identity",
+      "priority": 4,
+      "severity": "potential",
+      "effort": 3,
+      "dependsOn": ["task-3-rabbitmq-to-servicebus"],
+      "ruleIds": ["azure-password-01000"],
+      "target": {
+        "from": "Hardcoded credentials in application.yml",
+        "to": "Azure Key Vault or Azure Managed Identity (passwordless)"
+      },
+      "description": "Remove hardcoded RabbitMQ credentials (username: guest, password: guest) from application.yml line 13. If Service Bus migration is complete, configure passwordless connection via Azure Managed Identity. Otherwise, externalize secrets to Azure Key Vault.",
+      "filesToModify": [
+        "pom.xml",
+        "src/main/resources/application.yml"
+      ],
+      "changes": [
+        "Remove hardcoded spring.rabbitmq.username and spring.rabbitmq.password from application.yml",
+        "Add spring-cloud-azure-starter-keyvault-secrets dependency to pom.xml (if using Key Vault)",
+        "Configure Azure Managed Identity for passwordless Service Bus connection",
+        "Add environment variable references for any remaining secrets",
+        "Ensure no credentials are committed in source code"
+      ],
+      "successCriteria": "No hardcoded credentials in application.yml. Secrets managed via Azure Key Vault or Managed Identity.",
+      "status": "pending"
+    },
+    {
+      "id": "task-5-update-dockerfile",
+      "phase": "phase-5",
+      "type": "infrastructure",
+      "skill": "builtin:dockerfile-update",
+      "title": "Update Dockerfile Base Images for Java 17",
+      "priority": 5,
+      "severity": "mandatory",
+      "effort": 2,
+      "dependsOn": ["task-1-java-upgrade"],
+      "ruleIds": [],
+      "target": {
+        "from_build": "maven:3.8-openjdk-8",
+        "to_build": "maven:3.9-eclipse-temurin-17",
+        "from_runtime": "eclipse-temurin:8-jre",
+        "to_runtime": "eclipse-temurin:17-jre"
+      },
+      "description": "Update Dockerfile FROM statements to use Java 17 base images. Update the build stage from maven:3.8-openjdk-8 to maven:3.9-eclipse-temurin-17 and the runtime stage from eclipse-temurin:8-jre to eclipse-temurin:17-jre.",
+      "filesToModify": [
+        "Dockerfile"
+      ],
+      "changes": [
+        "Update build stage: FROM maven:3.8-openjdk-8 → FROM maven:3.9-eclipse-temurin-17",
+        "Update runtime stage: FROM eclipse-temurin:8-jre → FROM eclipse-temurin:17-jre",
+        "Update JAR filename if version changed during upgrades",
+        "Remove TECH DEBT comment from Dockerfile"
+      ],
+      "successCriteria": "Docker image builds successfully with Java 17 base images. Container starts and runs the application.",
+      "status": "pending"
+    },
+    {
+      "id": "task-6-validate-build",
+      "phase": "phase-2",
+      "type": "validation",
+      "skill": "builtin:maven-build",
+      "title": "Validate Full Build After Framework Upgrades",
+      "priority": 6,
+      "severity": "mandatory",
+      "effort": 2,
+      "dependsOn": ["task-2-springboot-upgrade"],
+      "ruleIds": [],
+      "target": {},
+      "description": "Run a full Maven build (mvn clean package) to validate that all Java 17 + Spring Boot 3.x changes compile successfully and all tests pass.",
+      "filesToModify": [],
+      "changes": [
+        "Run mvn clean package to verify compilation",
+        "Run mvn test to verify all tests pass",
+        "Fix any compilation errors or test failures from the upgrade"
+      ],
+      "successCriteria": "mvn clean package succeeds with 0 errors and 0 test failures.",
+      "status": "pending"
+    },
+    {
+      "id": "task-7-validate-messaging",
+      "phase": "phase-3",
+      "type": "validation",
+      "skill": "builtin:maven-build",
+      "title": "Validate Build After Messaging Migration",
+      "priority": 7,
+      "severity": "optional",
+      "effort": 2,
+      "dependsOn": ["task-3-rabbitmq-to-servicebus"],
+      "ruleIds": [],
+      "target": {},
+      "description": "Run a full Maven build to validate that the RabbitMQ → Azure Service Bus migration compiles and tests pass.",
+      "filesToModify": [],
+      "changes": [
+        "Run mvn clean package to verify messaging migration",
+        "Verify OrderMessageListener compiles with new Service Bus annotations",
+        "Validate application.yml configuration is correct"
+      ],
+      "successCriteria": "mvn clean package succeeds after messaging migration. No compilation errors.",
+      "status": "pending"
+    },
+    {
+      "id": "task-8-cve-check",
+      "phase": "phase-5",
+      "type": "validation",
+      "skill": "builtin:cve-check",
+      "title": "CVE Vulnerability Check on Final Dependencies",
+      "priority": 8,
+      "severity": "mandatory",
+      "effort": 1,
+      "dependsOn": [
+        "task-2-springboot-upgrade",
+        "task-3-rabbitmq-to-servicebus",
+        "task-4-secure-credentials"
+      ],
+      "ruleIds": [],
+      "target": {},
+      "description": "Run a CVE vulnerability check on all final project dependencies to ensure no known security vulnerabilities exist after the modernization.",
+      "filesToModify": [],
+      "changes": [
+        "Run CVE check on all Maven dependencies",
+        "Remediate any critical or high severity vulnerabilities",
+        "Document any accepted risks for lower severity issues"
+      ],
+      "successCriteria": "No critical or high severity CVEs in final dependency set.",
+      "status": "pending"
+    }
+  ]
+}
