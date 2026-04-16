@@ -1,17 +1,19 @@
 package com.acme.scm.worker.listener;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * TECH DEBT:
  * - Uses RabbitMQ (should migrate to Azure Service Bus with custom messaging API)
  * - Uses SLF4J instead of InternalLogger
  */
-@Slf4j
 @Component
 public class OrderMessageListener {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderMessageListener.class);
 
     @RabbitListener(queues = "${app.messaging.queue.order-created}")
     public void handleOrderCreated(String message) {

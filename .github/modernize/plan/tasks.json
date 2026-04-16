@@ -19,6 +19,13 @@
         "passBuild": "true",
         "generateNewUnitTests": "false",
         "passUnitTests": "true"
+      },
+      "status": "success",
+      "taskSummary": "Upgrade already implemented in repository: Spring Boot upgraded to 4.0.0, Java and compiler settings upgraded to 25, Docker base images updated to OpenJDK 25, and no javax.* references remain in source. Verified with mvn -B test (BUILD SUCCESS).",
+      "successCriteriaStatus": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
       }
     }
   ],
