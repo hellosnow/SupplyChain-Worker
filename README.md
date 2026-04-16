@@ -11,8 +11,8 @@ Background worker service for Supply Chain Management System.
 
 ## Tech Stack
 
-- Java 8
-- Spring Boot 2.7.18
+- Java 25
+- Spring Boot 4.0.0
 - RabbitMQ
 
 ## Tech Debt

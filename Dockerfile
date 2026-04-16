@@ -1,5 +1,4 @@
-# TECH DEBT: Uses old Java 8 base image
-FROM maven:3.8-openjdk-8 AS build
+FROM mcr.microsoft.com/openjdk/jdk:25-ubuntu AS build
 
 WORKDIR /app
 
@@ -9,7 +8,7 @@ RUN mvn dependency:go-offline
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:8-jre
+FROM mcr.microsoft.com/openjdk/jdk:25-distroless
 
 WORKDIR /app
 
