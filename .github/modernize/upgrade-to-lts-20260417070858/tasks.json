@@ -20,7 +20,13 @@
         "generateNewUnitTests": "false",
         "passUnitTests": "true"
       },
-      "status": "pending"
+      "successCriteriaStatus": {
+        "passBuild": "true",
+        "generateNewUnitTests": null,
+        "passUnitTests": "true"
+      },
+      "status": "success",
+      "taskSummary": "Successfully upgraded the project from Java 8 to JDK 25. Updated pom.xml with Java 25 source/target levels and maven-compiler-plugin 3.13.0. Removed Lombok (incompatible with Java 25) and replaced @Slf4j with an explicit SLF4J LoggerFactory logger. Updated Dockerfile to use eclipse-temurin:25 base images. Build and all tests pass."
     }
   ],
   "metadata": {
