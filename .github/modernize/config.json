@@ -1,0 +1,6 @@
+{
+  "portfolio_url": "https://github.com/hellosnow/modernization-playbook",
+  "feature_flags": {
+    "playbook": true
+  }
+}
