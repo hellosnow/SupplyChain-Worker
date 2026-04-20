@@ -1,0 +1,102 @@
+{
+  "$schema": "tasks-schema.json",
+  "description": "Tasks template for modernization plan modernization-plan-0420",
+  "metadata": {
+    "planName": "modernization-plan-0420",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-20T05:04:25.961Z",
+    "version": "1.0"
+  },
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-4x",
+      "description": "Upgrade from Spring Boot 2.7.18 (Java 8) to Spring Boot 4.0+ (Java 25) including Jakarta EE namespace migration",
+      "reason": "Java 8 and Spring Boot 2.x are end-of-life per organizational policy. Upgrade is required for security, performance, and compatibility with Azure services.",
+      "requirements": "Upgrade Spring Boot from 2.7.18 to 4.0+. Upgrade Java from 8 to 25. Migrate javax.* to jakarta.* namespace. Update all Spring Boot dependencies to compatible versions. Update Maven compiler settings to Java 25. Ensure project compiles and all existing tests pass after upgrade.",
+      "environmentConfiguration": null,
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-migration-rabbitmq-to-servicebus",
+      "description": "Migrate from RabbitMQ AMQP messaging to Azure Service Bus with Managed Identity for secure, credential-free authentication",
+      "reason": "RabbitMQ is an on-premises messaging solution with hardcoded credentials. Azure Service Bus provides a fully managed cloud messaging service with Managed Identity support, eliminating credential management.",
+      "requirements": "Migrate all three message queues (order.created, inventory.alert, approval.pending) from RabbitMQ to Azure Service Bus. Replace @RabbitListener annotations with Azure Service Bus equivalents. Use Managed Identity for authentication to eliminate hardcoded RabbitMQ credentials (guest/guest). Remove spring-boot-starter-amqp dependency and RabbitMQ configuration from application.yml.",
+      "environmentConfiguration": null,
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-migrate-logging-to-internallogger",
+      "description": "Replace SLF4J/Lombok logging and System.out.println with InternalLogger per organizational policy",
+      "reason": "SLF4J and direct console output are prohibited technologies per organizational policy. InternalLogger (com.acme.logging.InternalLogger) provides trace ID injection, team tags, and structured JSON logging required for production observability.",
+      "requirements": "Replace all @Slf4j annotations and log.info/warn/error calls with com.acme.logging.InternalLogger. Replace all System.out.println and System.err.println calls with InternalLogger. Remove Lombok @Slf4j usage for logging. Ensure all log levels (info, warn, error) are properly mapped to InternalLogger equivalents.",
+      "environmentConfiguration": null,
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-transform-migrate-error-handling-to-result-pattern",
+      "description": "Replace exception-based error handling with Result<T> pattern per organizational policy",
+      "reason": "Throwing exceptions for business logic flow control is prohibited per P0-2024-0847 post-incident mandate. The Result<T> pattern (com.acme.commons.Result) provides explicit, composable error handling without exception-based flow control.",
+      "requirements": "Replace all try-catch blocks used for flow control in message handlers with com.acme.commons.Result<T> pattern. Remove broad Exception catching patterns. Ensure all error paths return Result objects instead of throwing or catching exceptions for business logic.",
+      "environmentConfiguration": null,
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "005-security-validate-cves-and-fix",
+      "description": "Validate and fix all CVE vulnerabilities in project dependencies",
+      "reason": "User explicitly requested all CVEs to be fixed. Security compliance requires zero known vulnerabilities in production deployments.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities. Fix all identified CVEs by upgrading affected dependencies to patched versions. Verify zero remaining CVE issues after remediation. Ensure build and tests pass after dependency changes.",
+      "environmentConfiguration": "Java 25, Maven, Spring Boot 4.0+",
+      "skills": [
+        {
+          "name": "validate-cves-and-fix",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "006-containerization-update-dockerfile",
+      "description": "Update Dockerfile for Java 25 targeting Azure Container Apps deployment",
+      "reason": "Current Dockerfile uses Java 8 base images (maven:3.8-openjdk-8 and eclipse-temurin:8-jre). Must be updated for Java 25 with organization-standard base images for Azure Container Apps deployment.",
+      "requirements": "Update build stage base image to mcr.microsoft.com/openjdk/jdk:25-ubuntu. Update runtime stage base image to mcr.microsoft.com/openjdk/jdk:25-distroless. Update JAR file reference to match new artifact version. Maintain multi-stage build pattern. Ensure Dockerfile builds successfully.",
+      "environmentConfiguration": null,
+      "dockerfilePath": "Dockerfile"
+    }
+  ]
+}
