@@ -1,0 +1,112 @@
+{
+  "$schema": "tasks-schema.json",
+  "description": "Tasks template for modernization plan modernization-plan-1",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-4",
+      "description": "Upgrade from Spring Boot 2.7.18 (Java 8) to Spring Boot 4.0+ (Java 25), including Jakarta EE namespace migration and Spring Framework upgrade",
+      "reason": "Java 8 and Spring Boot 2.x are end-of-life per organizational policy. The playbook mandates Java 25 and Spring Boot 4.0+ for all supply chain services.",
+      "requirements": "Upgrade Java from 8 to 25. Upgrade Spring Boot from 2.7.18 to 4.0+. Migrate javax.* namespace to jakarta.*. Update Maven compiler settings (source and target to 25). Update all Spring and third-party dependencies to versions compatible with Spring Boot 4.0+ and Java 25.",
+      "environmentConfiguration": null,
+      "skills": [
+        {
+          "name": "create-java-upgrade-plan",
+          "location": "project"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-migration-rabbitmq-to-servicebus",
+      "description": "Migrate messaging from RabbitMQ (Spring AMQP) to Azure Service Bus",
+      "reason": "RabbitMQ is an on-premises messaging system. Migrating to Azure Service Bus provides managed, scalable cloud messaging with built-in security, monitoring, and Managed Identity support.",
+      "requirements": "Migrate all RabbitMQ message listeners (order.created, inventory.alert, approval.pending queues) to Azure Service Bus consumers. Replace Spring AMQP RabbitMQ dependencies with Azure Service Bus SDK. Use Managed Identity for authentication to Azure Service Bus.",
+      "environmentConfiguration": null,
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-migration-credentials-to-keyvault",
+      "description": "Migrate hardcoded credentials to Azure Key Vault",
+      "reason": "Hardcoded credentials in application.yml (RabbitMQ username/password) violate security policies. The playbook mandates Azure Key Vault for all sensitive configuration values with Managed Identity access.",
+      "requirements": "Remove all hardcoded credentials from application.yml and source code. Configure Azure Key Vault integration for secrets management. Use Managed Identity for Key Vault authentication. Ensure no sensitive values remain in configuration files.",
+      "environmentConfiguration": null,
+      "skills": [
+        {
+          "name": "migration-plaintext-credential-to-azure-keyvault",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-transform-apply-playbook-coding-standards",
+      "description": "Migrate logging to InternalLogger and error handling to Result<T> pattern per playbook policy",
+      "reason": "The playbook prohibits SLF4J, System.out.println, and exception-based error handling. All logging must use InternalLogger (com.acme.logging.InternalLogger) and all error handling must use Result<T> (com.acme.commons.Result).",
+      "requirements": "Replace all SLF4J usage (@Slf4j, LoggerFactory) with InternalLogger (com.acme.logging.InternalLogger). Replace all System.out.println and System.err.println calls with InternalLogger. Replace try/catch exception handling patterns with Result<T> pattern (com.acme.commons.Result) for business logic flow control.",
+      "environmentConfiguration": null,
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "005-security-validate-cves-and-fix",
+      "description": "Validate and fix all CVE vulnerabilities in project dependencies",
+      "reason": "User requires all CVE issues to be identified and remediated to ensure a secure deployment to Azure.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities. Upgrade or replace affected dependencies. Verify no critical or high-severity CVEs remain after remediation.",
+      "environmentConfiguration": "Java 25, Spring Boot 4.0+, Maven",
+      "skills": [
+        {
+          "name": "validate-cves-and-fix",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "006-containerization",
+      "description": "Update Dockerfile for Java 25 and Azure Container Apps deployment",
+      "reason": "The existing Dockerfile uses Java 8 base images (maven:3.8-openjdk-8 and eclipse-temurin:8-jre). It must be updated for Java 25 using playbook-mandated base images and optimized for Azure Container Apps.",
+      "requirements": "Update build stage base image to mcr.microsoft.com/openjdk/jdk:25-ubuntu. Update runtime stage base image to mcr.microsoft.com/openjdk/jdk:25-distroless. Update the output jar filename to match the new artifact version. Ensure the container is compatible with Azure Container Apps.",
+      "environmentConfiguration": null,
+      "dockerfilePath": "Dockerfile"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-1",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-20T03:29:31.139Z",
+    "version": "1.0"
+  }
+}
