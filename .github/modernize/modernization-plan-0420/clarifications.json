@@ -1,0 +1,10 @@
+[
+  {
+    "question": "The playbook targets Java 25 and Spring Boot 4.0+, but the upgrade tooling currently supports up to Java 21 and Spring Boot 3.x. Should the plan target the playbook versions (Java 25, Spring Boot 4.0+) or the tooling-supported versions (Java 21, Spring Boot 3.x)?",
+    "answer": ""
+  },
+  {
+    "question": "Are the internal libraries (com.acme.logging.InternalLogger and com.acme.commons.Result) available as Maven dependencies in your internal repository? If so, what are their Maven coordinates (groupId, artifactId, version)?",
+    "answer": ""
+  }
+]
