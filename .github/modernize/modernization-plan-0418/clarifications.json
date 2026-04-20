@@ -1,0 +1,14 @@
+[
+  {
+    "question": "The playbook policy prohibits SLF4J (@Slf4j), System.out.println, and Logback, requiring migration to InternalLogger (com.acme.logging.InternalLogger). The codebase currently uses @Slf4j in OrderMessageListener and System.out.println in SupplyChainWorkerApplication. Should a separate task be added to migrate all logging to InternalLogger?",
+    "answer": ""
+  },
+  {
+    "question": "The playbook policy prohibits throwing exceptions for business logic flow control and requires using the Result<T> pattern (com.acme.commons.Result). The codebase uses try/catch blocks in OrderMessageListener. Should a separate task be added to migrate error handling to the Result<T> pattern?",
+    "answer": ""
+  },
+  {
+    "question": "No assessment report was found at .github/modernize/assessment. The plan was generated based on direct codebase analysis and playbook policies. Is there an assessment report at a different location that should be incorporated?",
+    "answer": ""
+  }
+]

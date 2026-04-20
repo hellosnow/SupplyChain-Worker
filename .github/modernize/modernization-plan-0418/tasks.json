@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-java",
+      "description": "Upgrade Spring Boot from 2.7.18 to 4.0+ and Java from 8 to 25",
+      "reason": "The project uses Java 8 and Spring Boot 2.7.18, both prohibited under the Acme Corp internal playbook. Java 8, 11, and 17 are end-of-life for internal use, and all Spring Boot 2.x and 3.x versions must be upgraded to 4.0+.",
+      "requirements": "Upgrade Spring Boot from 2.7.18 to 4.0+, upgrade Java from 8 to 25, update pom.xml compiler source/target to 25, migrate from JavaEE (javax.*) to Jakarta EE (jakarta.*) namespaces, and update all dependencies to versions compatible with Spring Boot 4.0+ and Java 25. Target build base image: mcr.microsoft.com/openjdk/jdk:25-ubuntu. Target runtime base image: mcr.microsoft.com/openjdk/jdk:25-distroless.",
+      "environmentConfiguration": null,
+      "skills": [
+        {
+          "name": "create-java-upgrade-plan",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-migration-rabbitmq-to-servicebus",
+      "description": "Migrate messaging from RabbitMQ with AMQP to Azure Service Bus",
+      "reason": "The application uses RabbitMQ with Spring AMQP for background message processing. As part of the Azure migration, messaging must be migrated to Azure Service Bus with managed identity for secure, credential-free authentication, removing hardcoded RabbitMQ credentials.",
+      "requirements": "Migrate from RabbitMQ with AMQP to Azure Service Bus. Replace Spring AMQP RabbitMQ listener annotations and configuration with Azure Service Bus equivalents. Use managed identity for authentication. Remove hardcoded RabbitMQ credentials from application.yml. Migrate all three message queues: order-created, inventory-alert, and approval-pending.",
+      "environmentConfiguration": null,
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "003-security-validate-cves-and-fix",
+      "description": "Validate and fix all CVE vulnerabilities in project dependencies",
+      "reason": "The user explicitly requires all CVE issues to be fixed to ensure the application is free of known security vulnerabilities before deployment to Azure.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities, identify affected packages, and apply fixes by upgrading to patched versions or replacing vulnerable dependencies.",
+      "environmentConfiguration": "Java 25, Maven, Spring Boot 4.0+",
+      "skills": [
+        {
+          "name": "validate-cves-and-fix",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "004-containerization",
+      "description": "Update Dockerfile for Azure Container Apps deployment with Java 25",
+      "reason": "The existing Dockerfile uses outdated Java 8 base images (maven:3.8-openjdk-8 and eclipse-temurin:8-jre). Update to use the organization's approved container base images for Java 25 to support Azure Container Apps deployment.",
+      "requirements": "Update Dockerfile to use multi-stage build with mcr.microsoft.com/openjdk/jdk:25-ubuntu as build stage image and mcr.microsoft.com/openjdk/jdk:25-distroless as runtime stage image. Ensure the containerized application works correctly with the upgraded Java 25 runtime and Spring Boot 4.0+.",
+      "environmentConfiguration": null,
+      "dockerfilePath": "Dockerfile"
+    },
+    {
+      "type": "deployment",
+      "id": "005-deployment-azure-container-apps",
+      "description": "Deploy the containerized application to Azure Container Apps",
+      "reason": "Azure Container Apps is the organization's default deployment target for all Java services as defined in the playbook charter.",
+      "requirements": "Deploy the containerized SupplyChain Worker application to Azure Container Apps with appropriate resource configuration for a background worker service.",
+      "environmentConfiguration": null,
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "Create new service",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-0418",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-18T15:10:40.598Z",
+    "version": "1.0"
+  }
+}
