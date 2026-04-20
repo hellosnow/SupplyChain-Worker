@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "createdAt": "2026-04-20T05:14:33.0299714Z",
+  "status": "in_progress",
+  "repos": [
+    {
+      "name": "SupplyChain-worker",
+      "url": "https://github.com/hellosnow/SupplyChain-Worker.git",
+      "clonePath": "C:\\Users\\jessiehuang\\modernize\\repos\\SupplyChain-worker",
+      "statusFileDirectory": "C:\\Users\\jessiehuang\\modernize\\repos\\SupplyChain-worker\\.github\\modernize\\delegation",
+      "sessionId": "e022cf76-0bda-489a-87e7-4327dc3a0991",
+      "detectedLanguage": "Java",
+      "relativePath": ""
+    }
+  ]
+}
