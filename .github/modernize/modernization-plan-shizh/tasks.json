@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "metadata": {
+    "planName": "modernization-plan-shizh",
+    "projectName": "supplychain-worker",
+    "language": "java",
+    "createdAt": "2026-04-24T05:15:44.811Z",
+    "version": "1.0"
+  },
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-3",
+      "description": "Upgrade the project from Spring Boot 2.7.18 / Java 8 to Spring Boot 3.x / Java 21, including migration from javax.* to jakarta.* packages.",
+      "reason": "The assessment identified mandatory issues for legacy Java version (Java 8), Spring Boot 2.7.18 end-of-OSS-support, and Spring Framework 5.x end-of-OSS-support. The playbook targets Java 25 and Spring Boot 4.0+; this task addresses the highest supported upgrade path (Spring Boot 3.x / Java 21) as a prerequisite step.",
+      "requirements": "Upgrade Spring Boot from 2.7.18 to the latest Spring Boot 3.x release. Upgrade Java compiler source/target from 8 to 21. Migrate all javax.* imports and APIs to jakarta.* equivalents. Update pom.xml dependencies and plugin configurations as needed for compatibility. The project must compile and all existing tests must pass after the upgrade.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Migrate RabbitMQ Spring AMQP messaging to Azure Service Bus with Managed Identity authentication.",
+      "reason": "The assessment identified mandatory and optional findings for Spring RabbitMQ usage (azure-message-queue-rabbitmq-01000) and Spring AMQP dependency (azure-message-queue-amqp-02000). Replacing the self-managed RabbitMQ broker with Azure Service Bus reduces operational overhead and aligns with the Azure-native architecture target.",
+      "requirements": "Replace the spring-boot-starter-amqp dependency and all RabbitMQ-specific configuration with Azure Service Bus. Migrate @RabbitListener message consumers (handleOrderCreated, handleInventoryAlert, handleApprovalPending) to equivalent Azure Service Bus message receivers. Use Managed Identity for authentication — no connection string or shared access key credentials in source code or configuration. Preserve the existing queue/topic semantics for order-created, inventory-alert, and approval-pending messages.",
+      "dependencies": ["001-upgrade-spring-boot-3"],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "remote"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-plaintext-credentials-to-keyvault",
+      "description": "Remove hardcoded credentials from application.yml and store them in Azure Key Vault, accessed via Managed Identity.",
+      "reason": "The assessment identified a potential security finding (azure-password-01000) for the plaintext RabbitMQ password in application.yml. The playbook policy prohibits hardcoded credentials in any configuration file or source code.",
+      "requirements": "Remove hardcoded username/password values for RabbitMQ (and any other sensitive values) from application.yml and all configuration files. Store these secrets in Azure Key Vault. Configure the application to retrieve secrets from Azure Key Vault using Managed Identity via the Spring Cloud Azure Key Vault starter. No plaintext credentials should remain in source-controlled files.",
+      "dependencies": ["001-upgrade-spring-boot-3"],
+      "skills": [
+        {
+          "name": "migration-plaintext-credential-to-azure-keyvault",
+          "location": "remote"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-transform-logging-to-internal-logger",
+      "description": "Replace all SLF4J logging usages with InternalLogger (com.acme.logging.InternalLogger) across the codebase.",
+      "reason": "The playbook prohibits SLF4J (@Slf4j, LoggerFactory), Log4j, Logback, and java.util.logging. InternalLogger is the sole approved logging framework as it injects trace IDs and structured JSON context. The OrderMessageListener currently uses @Slf4j from Lombok.",
+      "requirements": "Remove the @Slf4j Lombok annotation and all SLF4J/Logback usages from every Java class. Replace with InternalLogger (com.acme.logging.InternalLogger) following its API. Update pom.xml to remove SLF4J/Logback dependencies and add the InternalLogger dependency. Preserve all existing log messages and levels (INFO, WARN, ERROR) using the InternalLogger equivalent methods.",
+      "dependencies": ["001-upgrade-spring-boot-3"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "005-transform-error-handling-to-result-pattern",
+      "description": "Replace exception-based flow control (try/catch blocks for business logic) with the Result<T> pattern (com.acme.commons.Result).",
+      "reason": "The playbook prohibits throwing exceptions for business logic flow control per the P0-2024-0847 post-incident mandate. The OrderMessageListener currently wraps business logic in try/catch blocks that catch exceptions to control message processing flow.",
+      "requirements": "Refactor all try/catch blocks used for business logic flow control in the application to use the Result<T> pattern (com.acme.commons.Result). The handler methods (handleOrderCreated, handleInventoryAlert, handleApprovalPending) must return or use Result<T> instead of relying on exception catching to handle processing outcomes. Add the com.acme.commons dependency to pom.xml if not already present. Do not remove try/catch from non-business-logic code (e.g., infrastructure-level error handling).",
+      "dependencies": ["001-upgrade-spring-boot-3"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "006-security-fix-cves",
+      "description": "Scan all project dependencies for known CVE vulnerabilities and remediate all identified issues.",
+      "reason": "The user explicitly requires all CVE issues to be fixed before deployment. Legacy dependencies (Java 8, Spring Boot 2.7.18) may carry known CVEs that must be resolved to meet organizational security requirements.",
+      "requirements": "Scan all Maven dependencies for known CVE vulnerabilities using the GitHub Security Advisories or equivalent tooling. For each identified CVE, upgrade the affected dependency to a non-vulnerable version or replace it with a safe alternative. The final build must be CVE-clean. Document all CVEs found and the remediation applied.",
+      "dependencies": [
+        "001-upgrade-spring-boot-3",
+        "002-transform-rabbitmq-to-servicebus",
+        "003-transform-plaintext-credentials-to-keyvault",
+        "004-transform-logging-to-internal-logger",
+        "005-transform-error-handling-to-result-pattern"
+      ],
+      "skills": [
+        {
+          "name": "validate-cves-and-fix",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "007-containerization-aca",
+      "description": "Update the Dockerfile to use approved Microsoft OpenJDK multi-stage build images for Azure Container Apps deployment.",
+      "reason": "The target deployment platform is Azure Container Apps (ACA) per the playbook. The container image must use the approved base images (mcr.microsoft.com/openjdk/jdk:25-ubuntu for build, mcr.microsoft.com/openjdk/jdk:25-distroless for runtime) to comply with targets.md.",
+      "requirements": "Update the existing Dockerfile to use a multi-stage build with mcr.microsoft.com/openjdk/jdk:25-ubuntu as the build stage image and mcr.microsoft.com/openjdk/jdk:25-distroless as the runtime stage image. Ensure the containerized application starts correctly, exposes the correct port (8082), and is ready for deployment to Azure Container Apps. Remove any references to deprecated or unapproved base images.",
+      "dependencies": [
+        "001-upgrade-spring-boot-3",
+        "002-transform-rabbitmq-to-servicebus",
+        "003-transform-plaintext-credentials-to-keyvault",
+        "004-transform-logging-to-internal-logger",
+        "005-transform-error-handling-to-result-pattern",
+        "006-security-fix-cves"
+      ],
+      "dockerfilePath": "Dockerfile"
+    }
+  ]
+}

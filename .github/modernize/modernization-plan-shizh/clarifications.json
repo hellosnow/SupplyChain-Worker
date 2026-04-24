@@ -1,0 +1,6 @@
+[
+  {
+    "question": "The organizational targets.md specifies Spring Boot 4.0+ and Java 25 as the required versions. However, the upgrade skill currently supports Spring Boot 3.x (with Java 21) as the highest available upgrade path. The current plan includes a Spring Boot 3.x upgrade to Java 21. Should we proceed with this Spring Boot 3.x / Java 21 upgrade, understanding that a subsequent upgrade to Spring Boot 4.0+ and Java 25 would be a separate manual step after this plan completes?",
+    "answer": ""
+  }
+]
