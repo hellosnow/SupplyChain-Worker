@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-3",
+      "description": "Upgrade the project from Spring Boot 2.7.18 / Java 8 to Spring Boot 3.x / Java 21",
+      "reason": "The project uses Spring Boot 2.7.18 which is End of OSS Support, and Java 8 which is a legacy version with known security vulnerabilities. Upgrading to Spring Boot 3.x and Java 21 is mandatory for Azure cloud readiness and security compliance.",
+      "requirements": "Upgrade Spring Boot parent to the latest 3.x release. Upgrade Java source/target compiler settings to 21. Migrate all javax.* imports to jakarta.* where applicable. Update the Dockerfile base image from Java 8 to Java 21. Ensure the project compiles and all existing tests pass after the upgrade.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Migrate messaging from RabbitMQ (Spring AMQP) to Azure Service Bus using managed identity",
+      "reason": "The application uses RabbitMQ with Spring AMQP and hardcoded credentials, which is not cloud-native and poses a security risk. Azure Service Bus provides a fully managed, secure messaging service aligned with Azure cloud standards. Managed identity removes the need for plaintext credentials.",
+      "requirements": "Replace the spring-boot-starter-amqp dependency with Azure Service Bus integration. Migrate the three RabbitMQ listener queues (order.created, inventory.alert, approval.pending) to Azure Service Bus queues. Replace @RabbitListener annotations with Azure Service Bus message handlers. Remove hardcoded RabbitMQ credentials from application.yml and configure Azure Service Bus connection using managed identity for credential-free authentication.",
+      "dependencies": [
+        "001-upgrade-spring-boot-3"
+      ],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "003-security-cve-fix",
+      "description": "Scan and fix all known CVE vulnerabilities in project dependencies",
+      "reason": "The user explicitly requires all CVE issues to be fixed. The legacy Java 8 and Spring Boot 2.x runtime introduces known CVEs. After upgrade and migration, a full dependency scan and remediation pass ensures a clean security posture.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities using the latest CVE database. Fix all identified vulnerabilities by upgrading affected dependencies to safe versions. The project must compile successfully and pass all unit tests after the fixes are applied.",
+      "environmentConfiguration": "Java 21, Maven (established by task 001-upgrade-spring-boot-3)",
+      "dependencies": [
+        "001-upgrade-spring-boot-3",
+        "002-transform-rabbitmq-to-servicebus"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-shizh",
+    "projectName": "supplychain-worker",
+    "language": "Java",
+    "createdAt": "2026-04-24T03:27:00.000Z",
+    "version": "1.0"
+  }
+}
