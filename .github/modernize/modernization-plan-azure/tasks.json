@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-3x",
+      "description": "Upgrade the application from Java 8 / Spring Boot 2.7.18 to Java 21 / Spring Boot 3.x, including Spring Framework 6.x and Jakarta EE namespace migration (javax.* to jakarta.*).",
+      "reason": "The application uses Java 8 and Spring Boot 2.7.18, both of which are end of OSS support. Upgrading to Java 21 and Spring Boot 3.x ensures long-term support, security patches, and compatibility with modern Azure services.",
+      "requirements": "Upgrade Spring Boot from 2.7.18 to latest 3.x. This includes upgrading Java from 8 to 21, Spring Framework from 5.x to 6.x, and migrating from javax.* to jakarta.* namespaces. Update Maven compiler settings and all affected dependencies accordingly.",
+      "dependencies": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Migrate the messaging infrastructure from RabbitMQ (Spring AMQP) to Azure Service Bus, replacing hardcoded RabbitMQ credentials with managed identity authentication.",
+      "reason": "The application uses RabbitMQ with hardcoded credentials for messaging. Migrating to Azure Service Bus provides a fully managed cloud-native messaging service with managed identity for secure, credential-free authentication.",
+      "requirements": "Migrate all RabbitMQ message listeners to Azure Service Bus. Replace Spring AMQP / RabbitMQ dependencies with Azure Service Bus Spring integration. Update message listener annotations and configuration. Remove hardcoded RabbitMQ credentials from application.yml. Configure queues: order.created, inventory.alert, approval.pending.",
+      "dependencies": [
+        "001-upgrade-spring-boot-3x"
+      ],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "003-security-validate-cves-and-fix",
+      "description": "Validate and remediate all CVE vulnerabilities in project dependencies to ensure a secure deployment to Azure.",
+      "reason": "The user explicitly requested that all CVE issues are fixed. After upgrading and migrating, the final dependency set must be scanned and remediated for known vulnerabilities.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities and apply fixes. Ensure the final artifact has no known critical or high severity CVEs after the upgrade and migration tasks are complete.",
+      "environmentConfiguration": "Java 21 runtime established by the upgrade task. Maven build tool.",
+      "dependencies": [
+        "001-upgrade-spring-boot-3x",
+        "002-transform-rabbitmq-to-servicebus"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "004-containerization",
+      "description": "Update the existing Dockerfile to use Java 21 base images, replacing the legacy Java 8 build and runtime images.",
+      "reason": "The current Dockerfile uses Java 8 base images (maven:3.8-openjdk-8 and eclipse-temurin:8-jre) which must be updated to match the upgraded Java 21 runtime.",
+      "requirements": "Update the multi-stage Dockerfile to use Maven with JDK 21 for the build stage and Eclipse Temurin JDK 21 JRE for the runtime stage. Update the output JAR filename if the version changes.",
+      "dependencies": [
+        "001-upgrade-spring-boot-3x",
+        "002-transform-rabbitmq-to-servicebus",
+        "003-security-validate-cves-and-fix"
+      ],
+      "dockerfilePath": "./Dockerfile"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-azure",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-24T03:41:53.033Z",
+    "version": "1.0"
+  }
+}
