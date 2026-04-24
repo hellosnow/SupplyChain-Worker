@@ -1,0 +1,67 @@
+{
+  "$schema": "tasks-schema.json",
+  "description": "Tasks template for modernization plan. Generated alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot",
+      "description": "Upgrade Spring Boot from 2.7.18 to latest stable 3.x, including Java 8 to 21, Spring Framework 5.x to 6.x, and javax.* to jakarta.* namespace migration.",
+      "reason": "The application uses Java 8 and Spring Boot 2.7.18 which are end of OSS support. Upgrading is mandatory for security patches, Azure compatibility, and long-term support.",
+      "requirements": "Upgrade Spring Boot parent from 2.7.18 to latest stable 3.x release. This includes upgrading Java from 8 to 21, Spring Framework from 5.x to 6.x, and migrating all javax.* imports to jakarta.* namespace. Update pom.xml Java version properties (java.version, maven.compiler.source, maven.compiler.target) to 21.",
+      "dependencies": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-migration-rabbitmq-to-servicebus",
+      "description": "Migrate from RabbitMQ with Spring AMQP to Azure Service Bus for fully managed cloud messaging.",
+      "reason": "The application uses RabbitMQ with hardcoded credentials. Migrating to Azure Service Bus provides a fully managed messaging service with Managed Identity for secure, credential-free authentication.",
+      "requirements": "Replace Spring AMQP RabbitMQ dependencies with Azure Service Bus. Migrate all 3 message listeners (order-created, inventory-alert, approval-pending) from @RabbitListener to Azure Service Bus. Remove hardcoded RabbitMQ credentials (username/password) from application.yml. Use Managed Identity for Azure Service Bus authentication.",
+      "dependencies": ["001-upgrade-spring-boot"],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "003-security-validate-cves",
+      "description": "Validate and remediate all CVE vulnerabilities in project dependencies.",
+      "reason": "User requires all CVE issues to be fixed to ensure a secure dependency baseline before containerization and deployment.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities using the GitHub Security Advisories API. Apply dependency version upgrades or patches for any identified CVEs. Ensure zero known critical and high CVE issues remain after remediation. Build must still pass after changes.",
+      "dependencies": ["001-upgrade-spring-boot", "002-transform-migration-rabbitmq-to-servicebus"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "004-containerization",
+      "description": "Update the existing Dockerfile to use Java 21 runtime images for the modernized application.",
+      "reason": "The current Dockerfile uses Java 8 base images (maven:3.8-openjdk-8 and eclipse-temurin:8-jre) which must be updated to match the upgraded Java 21 runtime.",
+      "requirements": "Update the build stage base image from maven:3.8-openjdk-8 to a Maven image with Java 21. Update the runtime stage base image from eclipse-temurin:8-jre to a Java 21 JRE image. Update the JAR filename reference if the version string changed. Preserve the existing multi-stage build pattern.",
+      "dockerfilePath": "Dockerfile",
+      "dependencies": ["003-security-validate-cves"]
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-modernize",
+    "projectName": "supplychain-worker",
+    "language": "java",
+    "createdAt": "2026-04-24T09:02:58.442Z",
+    "version": "1.0"
+  }
+}
