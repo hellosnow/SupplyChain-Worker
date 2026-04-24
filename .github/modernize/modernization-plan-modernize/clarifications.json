@@ -1,0 +1,6 @@
+[
+  {
+    "question": "The playbook targets Java 25 and Spring Boot 4.0+, but the supported upgrade path covers up to Java 21 and Spring Boot 3.x. The plan targets Java 21 and Spring Boot 3.x. Is this acceptable, or do you require a manual upgrade beyond these versions?",
+    "answer": ""
+  }
+]
