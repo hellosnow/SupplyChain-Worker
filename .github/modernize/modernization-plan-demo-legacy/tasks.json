@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade",
+      "description": "Upgrade SupplyChain Worker from Java 8 / Spring Boot 2.7.18 to Java 25 / Spring Boot 4.x",
+      "reason": "Java 8 and Spring Boot 2.x are end-of-life for internal use per the organisational policy (charter.md / targets.md). The target is Java 25 (latest LTS) and Spring Boot 4.x running on Spring Framework 7.x.",
+      "requirements": "Upgrade Java from 8 to 25 and Spring Boot from 2.7.18 to 4.x. Update Maven compiler source/target settings to 25. Migrate javax.* namespace references to jakarta.* as required by Spring Boot 4.x / Jakarta EE. Ensure all existing dependencies (Spring AMQP, Lombok) are compatible with Spring Boot 4.x and Spring Framework 7.x.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-migration-amqp-rabbitmq-servicebus",
+      "description": "Migrate RabbitMQ AMQP messaging to Azure Service Bus",
+      "reason": "The application uses Spring AMQP RabbitMQ (spring-boot-starter-amqp) with @RabbitListener consumers. Azure Service Bus is the target managed messaging service per the organisational modernisation strategy (targets.md). Managed Identity must be used for authentication.",
+      "requirements": "Replace spring-boot-starter-amqp with the Spring Cloud Azure Service Bus starter. Migrate the three @RabbitListener message consumers (order-created, inventory-alert, approval-pending) to equivalent Azure Service Bus queue listeners. Update application.yml to remove hardcoded RabbitMQ connection settings and configure Azure Service Bus with Managed Identity authentication. Remove any hardcoded RabbitMQ credentials.",
+      "dependencies": ["001-upgrade"],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "003-security-cve-fix",
+      "description": "Validate and fix all CVE vulnerabilities in project dependencies",
+      "reason": "User explicitly requested that all CVE issues are fixed as part of the migration. Ensuring no known vulnerabilities remain is also required before deployment.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities. Fix identified CVEs by upgrading affected dependency versions to the minimum secure version. Ensure the project still builds and all unit tests pass after the fixes.",
+      "environmentConfiguration": "Java Home: Java 25, Build tool: Maven",
+      "dependencies": [
+        "001-upgrade",
+        "002-transform-migration-amqp-rabbitmq-servicebus"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "004-containerization",
+      "description": "Containerize the SupplyChain Worker application using Microsoft OpenJDK 25 images",
+      "reason": "Azure Container Apps is the default target compute platform per the organisational strategy (charter.md / targets.md). The application must be containerised using the approved Microsoft OpenJDK base images before deployment.",
+      "requirements": "Create a multi-stage Dockerfile using mcr.microsoft.com/openjdk/jdk:25-ubuntu as the build stage and mcr.microsoft.com/openjdk/jdk:25-distroless as the runtime stage. Package the Spring Boot fat JAR and expose the appropriate application port.",
+      "dependencies": ["003-security-cve-fix"],
+      "dockerfilePath": "Dockerfile"
+    },
+    {
+      "type": "deployment",
+      "id": "005-deployment",
+      "description": "Deploy SupplyChain Worker to Azure Container Apps",
+      "reason": "Azure Container Apps is the default target compute platform for all Java services in the supply chain system per the organisational modernisation strategy (charter.md / targets.md).",
+      "requirements": "Deploy the containerised SupplyChain Worker to Azure Container Apps. Configure the container app to use Managed Identity for Azure Service Bus authentication. Set up appropriate scaling rules for message-driven (KEDA) workloads. Generate Bicep IaC for all required Azure resources.",
+      "dependencies": ["004-containerization"],
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "new",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-demo-legacy",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-25T10:06:02.000Z",
+    "version": "1.0"
+  }
+}
