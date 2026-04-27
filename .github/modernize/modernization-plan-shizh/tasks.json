@@ -1,0 +1,121 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/azure-migration-cli/main/schemas/tasks-schema.json",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-4x",
+      "description": "Upgrade the application from Spring Boot 2.7.18 / Java 8 to Spring Boot 4.x / Java 25",
+      "reason": "The application uses Spring Boot 2.7.18 and Java 8, both of which are end-of-life. The AppCAT assessment report (rules: spring-boot-to-azure-spring-boot-version-01000, spring-framework-version-01000, azure-java-version-02000) identifies these as mandatory issues. The Acme Corp Modernization Playbook targets Java 25 and Spring Boot 4.x as the required versions.",
+      "requirements": "Upgrade Spring Boot from 2.7.18 to 4.x. Upgrade Java from 8 to 25. Upgrade Spring Framework from 5.x to 7.x. Migrate all javax.* imports to jakarta.* namespaces. Update maven compiler source and target to 25. Update all Spring Boot managed dependencies to versions compatible with Spring Boot 4.x.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-migration-rabbitmq-servicebus",
+      "description": "Migrate RabbitMQ (Spring AMQP) messaging to Azure Service Bus with Managed Identity",
+      "reason": "The application uses RabbitMQ with Spring AMQP for messaging (spring-boot-starter-amqp, @RabbitListener). The AppCAT assessment report (rules: azure-message-queue-amqp-02000, azure-message-queue-rabbitmq-01000) flags this as a migration target. Per the Acme Corp Modernization Playbook, all messaging must use Azure Service Bus for Azure Container Apps deployment.",
+      "requirements": "Replace spring-boot-starter-amqp dependency with Spring Cloud Azure Service Bus JMS or Spring Messaging dependencies. Migrate all three @RabbitListener queue consumers (order-created, inventory-alert, approval-pending) to Azure Service Bus queue consumers. Use Managed Identity for authentication to Azure Service Bus. Update application.yml to remove RabbitMQ host/port/username/password settings and add Azure Service Bus namespace configuration.",
+      "dependencies": ["001-upgrade-spring-boot-4x"],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-migration-credentials-keyvault",
+      "description": "Migrate hardcoded credentials in application.yml to Azure Key Vault",
+      "reason": "The application.yml contains hardcoded RabbitMQ credentials (username: guest, password: guest). The AppCAT assessment report (rule: azure-password-01000) flags this as a security violation. Per the Acme Corp Modernization Playbook policies, all sensitive values must be stored in Azure Key Vault.",
+      "requirements": "Remove hardcoded credentials (username, password) from application.yml. Store sensitive configuration values in Azure Key Vault. Add Spring Cloud Azure Key Vault starter dependency. Configure the application to retrieve secrets from Azure Key Vault using Managed Identity. Ensure no plaintext credentials remain in any configuration file or source code.",
+      "dependencies": ["001-upgrade-spring-boot-4x"],
+      "skills": [
+        {
+          "name": "migration-plaintext-credential-to-azure-keyvault",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-transform-migration-logging-internallogger",
+      "description": "Replace SLF4J logging and System.out.println with InternalLogger",
+      "reason": "The application uses SLF4J (via Lombok @Slf4j) in OrderMessageListener.java and System.out.println in SupplyChainWorkerApplication.java. Per the Acme Corp Modernization Playbook policies, SLF4J and System.out.println are prohibited technologies. InternalLogger (com.acme.logging.InternalLogger) is the mandated sole logging framework for all applications.",
+      "requirements": "Remove Lombok @Slf4j annotation and all SLF4J imports from all Java source files. Replace all log.info, log.warn, log.error, log.debug calls with InternalLogger equivalents using com.acme.logging.InternalLogger. Replace all System.out.println and System.err.println calls with InternalLogger. Add the com.acme.logging InternalLogger dependency to pom.xml. Ensure no direct SLF4J, Logback, Log4j, or java.util.logging usage remains in the codebase.",
+      "dependencies": ["001-upgrade-spring-boot-4x"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "005-security-cve-fix",
+      "description": "Validate and fix all CVE vulnerabilities in project dependencies",
+      "reason": "The user explicitly requested all CVE issues to be fixed as part of the Azure migration. Dependency vulnerabilities pose security risks that must be remediated before deployment to Azure.",
+      "requirements": "Scan all project dependencies for known CVE vulnerabilities using the validate-cves-and-fix skill. Fix all identified CVEs by upgrading affected dependencies to patched versions. Ensure no high or critical severity CVEs remain in the final dependency tree. Use Java 25 and Maven 3.9+ as the runtime environment for scanning.",
+      "environmentConfiguration": "Java 25, Maven 3.9+",
+      "dependencies": [
+        "001-upgrade-spring-boot-4x",
+        "002-transform-migration-rabbitmq-servicebus",
+        "003-transform-migration-credentials-keyvault",
+        "004-transform-migration-logging-internallogger"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "006-containerization",
+      "description": "Containerize the supplychain-worker using a multi-stage Dockerfile with Microsoft OpenJDK base images",
+      "reason": "Containerization is required to deploy the application to Azure Container Apps. The Acme Corp Modernization Playbook targets specify mcr.microsoft.com/openjdk/jdk:25-ubuntu for the build stage and mcr.microsoft.com/openjdk/jdk:25-distroless for the runtime stage.",
+      "requirements": "Update the existing Dockerfile at the repository root to use a multi-stage build. Build stage: use mcr.microsoft.com/openjdk/jdk:25-ubuntu, run Maven build to produce the fat JAR. Runtime stage: use mcr.microsoft.com/openjdk/jdk:25-distroless, copy the JAR from the build stage and set the entrypoint. Ensure the container image is optimized for production with minimal attack surface.",
+      "dependencies": [
+        "001-upgrade-spring-boot-4x",
+        "002-transform-migration-rabbitmq-servicebus",
+        "003-transform-migration-credentials-keyvault",
+        "004-transform-migration-logging-internallogger",
+        "005-security-cve-fix"
+      ],
+      "dockerfilePath": "Dockerfile"
+    },
+    {
+      "type": "deployment",
+      "id": "007-deployment-aca",
+      "description": "Deploy the supplychain-worker to Azure Container Apps",
+      "reason": "The Acme Corp Modernization Playbook specifies Azure Container Apps (ACA) as the default compute target for all Java services in the supply chain system.",
+      "requirements": "Deploy the containerized supplychain-worker to Azure Container Apps. Provision required Azure resources: Azure Container Apps environment, Azure Service Bus namespace with queues (order-created, inventory-alert, approval-pending), and Azure Key Vault for secrets. Use Managed Identity for all service-to-service authentication. Configure the Container App with appropriate scaling rules for queue-based message processing using KEDA scalers on Azure Service Bus queue length.",
+      "dependencies": ["006-containerization"],
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "new",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-shizh",
+    "projectName": "supplychain-worker",
+    "language": "java",
+    "createdAt": "2026-04-27T07:56:34.070Z",
+    "version": "1.0"
+  }
+}
