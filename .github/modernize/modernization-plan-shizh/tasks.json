@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "metadata": {
+    "planName": "modernization-plan-shizh",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-27T10:30:55Z",
+    "version": "1.0"
+  },
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-4",
+      "description": "Upgrade the application runtime from Java 8 / Spring Boot 2.7.18 to Java 25 / Spring Boot 4.x, including Spring Framework 7.x and Jakarta EE namespace migration (javax.* → jakarta.*).",
+      "reason": "The project uses Java 8 and Spring Boot 2.7.18, which are end-of-life per the Acme Corp Modernization Playbook. The targets.md mandates Java 25 and Spring Boot 4.x as the target versions. All downstream Azure migration tasks depend on the upgraded runtime.",
+      "requirements": "Upgrade Spring Boot parent from 2.7.18 to the latest 4.x release. Update Java source and target compiler settings to Java 25. Migrate all javax.* imports to jakarta.* equivalents. Ensure the project compiles and all existing unit tests pass after the upgrade.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Replace Spring AMQP RabbitMQ messaging with Azure Service Bus using Spring Messaging. Update all message listener classes and connection configuration to use Azure Service Bus with Managed Identity authentication.",
+      "reason": "The application uses RabbitMQ (spring-boot-starter-amqp) for message consumption. The Acme Corp Modernization Playbook targets Azure Service Bus as the replacement for on-premises messaging brokers. The AppCAT assessment report identified this as an azure-message-queue-amqp-02000 violation.",
+      "requirements": "Replace spring-boot-starter-amqp with Spring Cloud Azure Service Bus JMS starter. Migrate the @RabbitListener annotated methods in OrderMessageListener to consume from Azure Service Bus queues (order-created, inventory-alert, approval-pending). Configure connection using Managed Identity (passwordless authentication). Remove all RabbitMQ connection properties from application.yml.",
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "dependencies": [
+        "001-upgrade-spring-boot-4"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-credentials-to-keyvault",
+      "description": "Remove hardcoded plaintext RabbitMQ credentials from application.yml and migrate all sensitive configuration values to Azure Key Vault, accessed via Managed Identity.",
+      "reason": "The application has hardcoded credentials (username: guest, password: guest) in application.yml, which is prohibited by the Acme Corp policies.md security requirements. The AppCAT assessment report flagged this as an azure-password-01000 violation. All secrets must be stored in Azure Key Vault.",
+      "requirements": "Identify and remove all plaintext credentials and sensitive configuration values from application.yml and source code. Store secrets in Azure Key Vault. Configure the application to retrieve secrets at runtime using the Spring Cloud Azure Key Vault starter with Managed Identity authentication. No credentials should remain in source-controlled configuration files.",
+      "skills": [
+        {
+          "name": "migration-plaintext-credential-to-azure-keyvault",
+          "location": "builtin"
+        }
+      ],
+      "dependencies": [
+        "001-upgrade-spring-boot-4"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-transform-logging-to-internallogger",
+      "description": "Replace all SLF4J (@Slf4j) usage and System.out.println / System.err.println statements with InternalLogger (com.acme.logging.InternalLogger) to comply with the Acme Corp logging policy.",
+      "reason": "The application uses SLF4J via Lombok's @Slf4j annotation and System.out.println for startup output. Both are prohibited by the Acme Corp policies.md, which requires InternalLogger for all logging to ensure trace-context injection, structured JSON output, and team tag support. SLF4J has no trace context integration and does not meet the compliance requirements.",
+      "requirements": "Remove Lombok @Slf4j annotations from all classes. Remove all SLF4J imports (org.slf4j.*). Replace all log.info / log.warn / log.error calls with equivalent InternalLogger (com.acme.logging.InternalLogger) calls. Replace all System.out.println and System.err.println statements with InternalLogger. The InternalLogger must be the sole logging mechanism across the entire application.",
+      "dependencies": [
+        "001-upgrade-spring-boot-4"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "005-containerization",
+      "description": "Update the existing Dockerfile to use the approved Microsoft OpenJDK 25 base images and prepare the container image for deployment to Azure Container Apps.",
+      "reason": "The existing Dockerfile uses outdated Java 8 base images (maven:3.8-openjdk-8 and eclipse-temurin:8-jre). The targets.md specifies mcr.microsoft.com/openjdk/jdk:25-ubuntu for the build stage and mcr.microsoft.com/openjdk/jdk:25-distroless for the runtime stage. Azure Container Apps requires a container image.",
+      "requirements": "Update the Dockerfile build stage to use mcr.microsoft.com/openjdk/jdk:25-ubuntu and the runtime stage to use mcr.microsoft.com/openjdk/jdk:25-distroless. Ensure the multi-stage build produces a minimal, secure production image. The containerized application must start correctly and be ready for deployment to Azure Container Apps.",
+      "dockerfilePath": "Dockerfile",
+      "dependencies": [
+        "002-transform-rabbitmq-to-servicebus",
+        "003-transform-credentials-to-keyvault",
+        "004-transform-logging-to-internallogger"
+      ]
+    },
+    {
+      "type": "deployment",
+      "id": "006-deployment-aca",
+      "description": "Deploy the containerized SupplyChain Worker to Azure Container Apps with Managed Identity configured for Azure Service Bus and Azure Key Vault access.",
+      "reason": "The Acme Corp Modernization Playbook (charter.md) specifies Azure Container Apps (ACA) as the default replatform target for all Java supply chain services. Deployment completes the migration to Azure.",
+      "requirements": "Deploy the SupplyChain Worker container image to Azure Container Apps. Configure a system-assigned Managed Identity on the Container App. Grant the identity the appropriate roles for Azure Service Bus (Azure Service Bus Data Receiver/Sender) and Azure Key Vault (Key Vault Secrets User). Configure environment variables and scaling rules appropriate for a background message-processing worker.",
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "new",
+      "deploymentTool": "bicep",
+      "dependencies": [
+        "005-containerization"
+      ]
+    }
+  ]
+}
