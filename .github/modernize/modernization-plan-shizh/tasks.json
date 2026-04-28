@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-spring-boot-4x",
+      "description": "Upgrade the application runtime from Java 8 / Spring Boot 2.7.18 to Java 25 / Spring Boot 4.x",
+      "reason": "Java 8 and Spring Boot 2.x are end-of-life for internal use per the Acme Corp Modernization Playbook. All services must target Java 25 and Spring Boot 4.x as defined in targets.md.",
+      "requirements": "Upgrade Java from 8 to 25 and Spring Boot from 2.7.18 to 4.x. Include the associated Spring Framework 7.x upgrade and Jakarta EE namespace migration (javax.* to jakarta.*). Ensure the build tool (Maven) is compatible with the new versions. This task must succeed before any other migration tasks begin.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Migrate RabbitMQ AMQP messaging to Azure Service Bus",
+      "reason": "The application uses RabbitMQ AMQP (spring-boot-starter-amqp) for processing three message queues (order-created, inventory-alert, approval-pending). Per the modernization targets, messaging must be migrated to Azure Service Bus with Managed Identity authentication to eliminate the on-premises RabbitMQ dependency.",
+      "requirements": "Replace Spring AMQP RabbitMQ dependencies with Azure Service Bus messaging. Migrate the three message listeners (order-created, inventory-alert, approval-pending) to consume from the equivalent Azure Service Bus entities. Use Managed Identity for authentication — no connection strings or passwords. Remove all RabbitMQ connection configuration from application.yml.",
+      "dependencies": ["001-upgrade-spring-boot-4x"],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-logging-to-internallogger",
+      "description": "Migrate SLF4J and System.out.println usage to InternalLogger",
+      "reason": "The application uses SLF4J via Lombok @Slf4j in OrderMessageListener and System.out.println in SupplyChainWorkerApplication. Both are prohibited per policies.md, which mandates InternalLogger (com.acme.logging.InternalLogger) as the sole logging framework to ensure trace-context integration.",
+      "requirements": "Replace all SLF4J usage (Lombok @Slf4j and log.info/log.warn/log.error calls) with InternalLogger (com.acme.logging.InternalLogger). Replace all System.out.println and System.err.println calls with InternalLogger equivalents. Remove Lombok @Slf4j annotations and SLF4J dependencies once replaced. Ensure all log statements preserve their original severity and message content.",
+      "dependencies": ["001-upgrade-spring-boot-4x"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-transform-credentials-to-keyvault",
+      "description": "Migrate hardcoded plaintext credentials to Azure Key Vault",
+      "reason": "The application.yml contains hardcoded RabbitMQ credentials (username and password). Per policies.md, all sensitive values including credentials, API keys, and connection strings must be stored in Azure Key Vault. Even after the RabbitMQ-to-Service-Bus migration, Key Vault must be configured as the secrets store to meet the required cloud resource mandate.",
+      "requirements": "Identify and remove all hardcoded credentials and sensitive values from source code and configuration files. Configure Azure Key Vault as the secrets store using the Spring Cloud Azure Key Vault starter with Managed Identity. Ensure no plaintext secrets remain in application.yml, application.properties, or source code after migration.",
+      "dependencies": ["001-upgrade-spring-boot-4x"],
+      "skills": [
+        {
+          "name": "migration-plaintext-credential-to-azure-keyvault",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "005-transform-error-handling-to-result-pattern",
+      "description": "Migrate exception-based flow control to the Result<T> pattern",
+      "reason": "The OrderMessageListener uses try/catch blocks for handling business logic errors in all three message handler methods. Per policies.md (P0-2024-0847 post-incident mandate), throwing exceptions for business logic flow control and using try/catch blocks for flow control are prohibited. The approved alternative is the Result<T> pattern (com.acme.commons.Result).",
+      "requirements": "Replace try/catch blocks used for business logic flow control in OrderMessageListener with the Result<T> pattern (com.acme.commons.Result). Apply the Result<T> pattern consistently across all three message handler methods. Ensure error conditions are handled using Result<T> without throwing or catching exceptions for control flow.",
+      "dependencies": ["001-upgrade-spring-boot-4x"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "006-containerization",
+      "description": "Update the Dockerfile to use Java 25 multi-stage build with distroless runtime image",
+      "reason": "The existing Dockerfile uses the outdated Java 8 base images (maven:3.8-openjdk-8 and eclipse-temurin:8-jre). Per targets.md, the build stage must use mcr.microsoft.com/openjdk/jdk:25-ubuntu and the runtime stage must use mcr.microsoft.com/openjdk/jdk:25-distroless.",
+      "requirements": "Update the Dockerfile to use mcr.microsoft.com/openjdk/jdk:25-ubuntu as the build stage image and mcr.microsoft.com/openjdk/jdk:25-distroless as the runtime stage image. Maintain the multi-stage build pattern. Update the Maven build stage to be compatible with Java 25 and the new artifact name produced after the Spring Boot 4.x upgrade.",
+      "dependencies": [
+        "001-upgrade-spring-boot-4x",
+        "002-transform-rabbitmq-to-servicebus",
+        "003-transform-logging-to-internallogger",
+        "004-transform-credentials-to-keyvault",
+        "005-transform-error-handling-to-result-pattern"
+      ],
+      "dockerfilePath": "Dockerfile"
+    },
+    {
+      "type": "deployment",
+      "id": "007-deployment-aca",
+      "description": "Deploy the containerized SupplyChain Worker to Azure Container Apps",
+      "reason": "Per charter.md, the default modernization strategy for all Java services in the supply chain system is to replatform to Azure Container Apps (ACA). Per targets.md, Azure Container Apps is the default compute platform for all services.",
+      "requirements": "Generate Bicep infrastructure-as-code to provision and deploy the SupplyChain Worker to Azure Container Apps. Include the necessary Azure resources: Azure Container Registry, Azure Service Bus namespace, and Azure Key Vault. Configure Managed Identity for the container app to authenticate with Azure Service Bus and Azure Key Vault. Ensure the deployment follows the ACA replatform strategy defined in the charter.",
+      "dependencies": ["006-containerization"],
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "new",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-shizh",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-28T07:58:01Z",
+    "version": "1.0"
+  }
+}
