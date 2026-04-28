@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-springboot4",
+      "description": "Upgrade the project from Spring Boot 2.7.18 / Java 8 to Spring Boot 4.x / Java 25 / Spring Framework 7.x",
+      "reason": "The assessment report identifies Java 8, Spring Boot 2.7.18, and Spring Framework 5.x as end-of-life versions (rules: azure-java-version-02000, spring-boot-to-azure-spring-boot-version-01000, spring-framework-version-01000). The playbook targets Java 25 and Spring Boot 4.0+ and prohibits use of Java 8, 11, or 17 for internal services.",
+      "requirements": "Upgrade the project to Spring Boot 4.x (latest 4.x release), Java 25, and Spring Framework 7.x. Update pom.xml parent version, java.version property, and all related Spring dependencies. Resolve any breaking changes introduced by the framework upgrade including Jakarta EE namespace migration (javax.* to jakarta.*) and any deprecated API replacements.",
+      "dependencies": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Migrate RabbitMQ AMQP messaging to Azure Service Bus with Managed Identity authentication",
+      "reason": "The assessment report identifies Spring AMQP / RabbitMQ dependency and code usage (rules: azure-message-queue-amqp-02000, azure-message-queue-rabbitmq-01000). The playbook targets Azure Service Bus for all cloud messaging and Managed Identity for service-to-service authentication.",
+      "requirements": "Replace the Spring AMQP / RabbitMQ dependency (spring-boot-starter-amqp) with Spring Cloud Azure Service Bus AMQP starter. Migrate the RabbitMQ connection configuration in application.yml to Azure Service Bus connection settings using Managed Identity (passwordless). Migrate all three @RabbitListener methods in OrderMessageListener.java to equivalent Azure Service Bus message consumers for queues: order-created, inventory-alert, and approval-pending.",
+      "dependencies": [
+        "001-upgrade-springboot4"
+      ],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-credentials-to-keyvault",
+      "description": "Migrate hardcoded plaintext credentials from application.yml to Azure Key Vault",
+      "reason": "The assessment report identifies a password in the configuration file (rule: azure-password-01000). The playbook prohibits hardcoded credentials and requires all sensitive values to be stored in Azure Key Vault accessed via Spring Cloud Azure Key Vault starter or Managed Identity.",
+      "requirements": "Remove the hardcoded RabbitMQ/Service Bus credentials (username, password, connection strings) from application.yml and any other configuration or source files. Store sensitive values in Azure Key Vault and configure the application to retrieve them at runtime using the Spring Cloud Azure Key Vault starter with Managed Identity authentication.",
+      "dependencies": [
+        "001-upgrade-springboot4"
+      ],
+      "skills": [
+        {
+          "name": "migration-plaintext-credential-to-azure-keyvault",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "004-security-cve-fix",
+      "description": "Scan all project dependencies for known CVE vulnerabilities and remediate all findings",
+      "reason": "The user explicitly requested that all CVE issues are fixed as part of this modernization. Remediating vulnerabilities is also required for SOC 2 compliance per the playbook policies.",
+      "requirements": "Run a full CVE scan on all Maven dependencies. Upgrade or replace any dependency with a known CVE until the project is CVE-clean. Re-run the scan to confirm no vulnerabilities remain.",
+      "environmentConfiguration": "Java 25; Maven build tool (established by task 001-upgrade-springboot4).",
+      "dependencies": [
+        "001-upgrade-springboot4",
+        "002-transform-rabbitmq-to-servicebus",
+        "003-transform-credentials-to-keyvault"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      },
+      "skills": [
+        {
+          "name": "validate-cves-and-fix",
+          "location": "builtin"
+        }
+      ]
+    },
+    {
+      "type": "containerization",
+      "id": "005-containerization",
+      "description": "Containerize the application using Microsoft OpenJDK 25 multi-stage Docker build",
+      "reason": "Azure Container Apps requires a container image. The playbook targets ACA as the default compute platform for all Java supply chain services and mandates use of the official Microsoft OpenJDK 25 images.",
+      "requirements": "Create a multi-stage Dockerfile in the project root. Use mcr.microsoft.com/openjdk/jdk:25-ubuntu as the build stage image and mcr.microsoft.com/openjdk/jdk:25-distroless as the runtime stage image. Package the Maven-built JAR into the container and expose the application port.",
+      "dependencies": [
+        "004-security-cve-fix"
+      ],
+      "dockerfilePath": "Dockerfile"
+    },
+    {
+      "type": "deployment",
+      "id": "006-deployment-aca",
+      "description": "Deploy the containerized supplychain-worker to Azure Container Apps",
+      "reason": "The playbook targets Azure Container Apps (ACA) as the default compute platform for all Java supply chain services. Deployment completes the Azure migration.",
+      "requirements": "Generate Bicep IaC files and deploy the containerized supplychain-worker to Azure Container Apps. Provision or reuse an ACA environment. Configure the container app with a Managed Identity that has access to Azure Service Bus (for messaging) and Azure Key Vault (for secrets). Set appropriate scaling rules for message-driven workloads.",
+      "dependencies": [
+        "005-containerization"
+      ],
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "Create new",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-shizh",
+    "projectName": "supplychain-worker",
+    "language": "java",
+    "createdAt": "2026-04-28T02:55:57Z",
+    "version": "1.0"
+  }
+}
