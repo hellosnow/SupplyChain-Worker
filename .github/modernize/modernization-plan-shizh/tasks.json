@@ -1,0 +1,114 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/modernize-schema/main/tasks-schema.json",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-springboot4-java25",
+      "description": "Upgrade the project runtime from Java 8 and Spring Boot 2.7.18 to Java 25 and Spring Boot 4.x",
+      "reason": "Java 8 and Spring Boot 2.x are end-of-life for internal use per the Acme Corp charter. The targets.md mandates Java 25 (latest LTS) and Spring Boot 4.x. This upgrade must occur first because all subsequent Azure transform tasks require the updated runtime and dependency format.",
+      "requirements": "Upgrade Java source/target compatibility from 8 to 25. Upgrade Spring Boot parent from 2.7.18 to the latest 4.x release. Update all Spring Framework transitive dependencies to 7.x. Migrate from JavaEE (javax.*) namespace to Jakarta EE (jakarta.*) where applicable. Ensure the Maven build compiles and all existing tests pass after the upgrade.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Migrate RabbitMQ AMQP messaging to Azure Service Bus",
+      "reason": "The application currently uses a self-hosted RabbitMQ broker (Spring AMQP). The Acme Corp modernization target is Azure Service Bus for cloud-native managed messaging with Managed Identity authentication, eliminating the on-premises broker dependency.",
+      "requirements": "Replace the Spring AMQP RabbitMQ dependency with the Spring Cloud Azure Service Bus JMS or messaging starter. Migrate the three message consumers (order.created, inventory.alert, approval.pending queues) to Azure Service Bus queues. Update connection configuration to use Azure Service Bus endpoint with Managed Identity (no passwords). Remove RabbitMQ-specific properties from application.yml.",
+      "dependencies": ["001-upgrade-springboot4-java25"],
+      "skills": [
+        {
+          "name": "migration-amqp-rabbitmq-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-logging-to-internallogger",
+      "description": "Migrate SLF4J / System.out.println logging to InternalLogger",
+      "reason": "Policies prohibit SLF4J (@Slf4j, LoggerFactory), Logback, and System.out.println because they lack trace-context integration. The required framework is com.acme.logging.InternalLogger, which injects trace IDs, team tags, and structured JSON logging for all supply chain services.",
+      "requirements": "Remove the Lombok @Slf4j annotation from OrderMessageListener and replace all log.info / log.warn / log.error calls with the equivalent InternalLogger methods from com.acme.logging.InternalLogger. Replace the System.out.println calls in SupplyChainWorkerApplication.main() with InternalLogger. Add the com.acme.logging InternalLogger dependency to pom.xml. Remove any SLF4J, Logback, or Log4j explicit dependencies if present.",
+      "dependencies": ["001-upgrade-springboot4-java25"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "004-transform-credentials-to-keyvault",
+      "description": "Migrate hardcoded RabbitMQ credentials to Azure Key Vault",
+      "reason": "The application.yml contains hardcoded RabbitMQ username and password ('guest'/'guest'). Policies mandate that all sensitive values (credentials, connection strings, API keys) must be stored in Azure Key Vault and accessed via the Spring Cloud Azure Key Vault starter or Managed Identity.",
+      "requirements": "Remove the hardcoded spring.rabbitmq.username and spring.rabbitmq.password values from application.yml. Store the credentials in Azure Key Vault. Configure the application to retrieve secrets from Azure Key Vault using the Spring Cloud Azure Key Vault starter with Managed Identity. Ensure no plaintext credentials remain in any configuration file or source code.",
+      "dependencies": ["001-upgrade-springboot4-java25"],
+      "skills": [
+        {
+          "name": "migration-plaintext-credential-to-azure-key-vault",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "005-transform-exception-handling-to-result",
+      "description": "Replace try/catch flow control with the Result<T> pattern",
+      "reason": "Per the P0-2024-0847 post-incident mandate, throwing exceptions for business logic flow control and using try/catch blocks for flow control are prohibited patterns. The three message listener methods in OrderMessageListener currently use try/catch to handle processing errors. The approved alternative is the Result<T> pattern from com.acme.commons.Result.",
+      "requirements": "Refactor all three message handler methods in OrderMessageListener (handleOrderCreated, handleInventoryAlert, handleApprovalPending) to use the Result<T> pattern from com.acme.commons.Result instead of try/catch blocks for flow control. Add the com.acme.commons Result<T> dependency to pom.xml. Ensure error paths return a Result.failure(...) rather than throwing or catching exceptions for flow control.",
+      "dependencies": ["001-upgrade-springboot4-java25"],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "containerization",
+      "id": "006-containerization",
+      "description": "Containerize the application using a multi-stage Dockerfile with Microsoft OpenJDK 25 distroless runtime image",
+      "reason": "Azure Container Apps (ACA) requires a container image. The Acme Corp targets.md mandates mcr.microsoft.com/openjdk/jdk:25-ubuntu as the build stage image and mcr.microsoft.com/openjdk/jdk:25-distroless as the runtime image for minimal attack surface.",
+      "requirements": "Create a multi-stage Dockerfile: build stage uses mcr.microsoft.com/openjdk/jdk:25-ubuntu with Maven to compile and package the application JAR; runtime stage uses mcr.microsoft.com/openjdk/jdk:25-distroless and copies only the final JAR. Expose port 8082. Ensure the container starts the Spring Boot application correctly.",
+      "dependencies": [
+        "002-transform-rabbitmq-to-servicebus",
+        "003-transform-logging-to-internallogger",
+        "004-transform-credentials-to-keyvault",
+        "005-transform-exception-handling-to-result"
+      ],
+      "dockerfilePath": "Dockerfile"
+    },
+    {
+      "type": "deployment",
+      "id": "007-deployment-to-aca",
+      "description": "Deploy the containerized SupplyChain Worker to Azure Container Apps",
+      "reason": "The Acme Corp charter mandates replatforming all Java supply chain services to Azure Container Apps (ACA) as the default compute target. This final task provisions and deploys the containerized application to ACA with Managed Identity enabled.",
+      "requirements": "Generate Bicep IaC files to provision the Azure Container Apps environment, Container Registry, and required Azure Service Bus and Key Vault resources. Deploy the container image to Azure Container Apps with Managed Identity assigned. Configure the ACA environment with appropriate scaling rules for message-driven workloads (scale to zero when no messages, scale out on queue depth).",
+      "dependencies": ["006-containerization"],
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "Create new service",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan-shizh",
+    "projectName": "SupplyChain Worker",
+    "language": "java",
+    "createdAt": "2026-04-29T02:49:33Z",
+    "version": "1.0"
+  }
+}
