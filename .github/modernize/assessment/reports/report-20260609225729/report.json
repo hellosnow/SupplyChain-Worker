@@ -1,0 +1,655 @@
+{
+  "version": "1.0.0",
+  "producer": "Java AppCAT CLI",
+  "metadata": {
+    "analysisStartTime": "2026-06-09T22:57:29.600Z",
+    "analysisEndTime": "2026-06-09T22:58:12.568Z",
+    "privacyMode": "Protected",
+    "privacyModeHelpUrl": "https://aka.ms/appmod-privacy-mode",
+    "targetIds": [
+      "azure-appservice",
+      "azure-aks",
+      "azure-container-apps"
+    ],
+    "targetDisplayNames": [
+      "Azure App Service",
+      "Azure Kubernetes Service",
+      "Azure Container Apps"
+    ],
+    "capabilities": [
+      "openjdk21"
+    ],
+    "os": [
+      "linux",
+      "windows"
+    ],
+    "id": "20260609225729",
+    "name": "Report_20260609225729",
+    "status": "completed",
+    "domains": [
+      "java-upgrade",
+      "cloud-readiness"
+    ],
+    "mode": "issue-only",
+    "minimumCveSeverity": "high"
+  },
+  "summary": {
+    "totalProjects": 1,
+    "totalIssues": 7,
+    "totalIncidents": 14,
+    "totalEffort": 90,
+    "charts": {
+      "severity": {
+        "mandatory": 6,
+        "optional": 7,
+        "potential": 1,
+        "information": 0
+      },
+      "category": {
+        "framework-upgrade": 5,
+        "hardcoded-credential": 1,
+        "java-version-upgrade": 3,
+        "local-credential": 1,
+        "messaging-service-migration": 4
+      }
+    }
+  },
+  "projects": [
+    {
+      "path": ".",
+      "issues": 7,
+      "storyPoints": 90,
+      "properties": {
+        "appName": "supplychain-worker",
+        "jdkVersion": "8",
+        "frameworks": [
+          "Spring Boot",
+          "Spring"
+        ],
+        "languages": [
+          "Java",
+          "Python"
+        ],
+        "tools": [
+          "Maven"
+        ]
+      },
+      "incidents": [
+        {
+          "ruleId": "azure-password-01000",
+          "incidentId": "a486978c-5fca-4ecc-b18d-06b6dd127d43",
+          "location": "src/main/resources/application.yml",
+          "locationKind": "File",
+          "line": 13,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "azure-appservice": {
+              "effort": 3,
+              "severity": "potential"
+            },
+            "azure-container-apps": {
+              "effort": 3,
+              "severity": "potential"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "azure-java-version-02000",
+          "incidentId": "964b4440-ce7e-43bf-a567-ec022e18fc26",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 24,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "optional"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "optional"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "optional"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "azure-java-version-02000",
+          "incidentId": "6b470e98-2cc4-4c06-8a07-cf6b5432dad1",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 25,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "optional"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "optional"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "optional"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "azure-java-version-02000",
+          "incidentId": "dbf1214b-a876-4887-b956-eedfc2d06b2f",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 26,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "optional"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "optional"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "optional"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "azure-message-queue-rabbitmq-01000",
+          "incidentId": "cb53ddb8-16db-4983-84fa-14c5161d9aec",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 40,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-appservice": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-container-apps": {
+              "effort": 5,
+              "severity": "optional"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "azure-message-queue-rabbitmq-01000",
+          "incidentId": "6839fda1-95d8-4c03-8a83-2ab64e93dca9",
+          "location": "src/main/java/com/acme/scm/worker/listener/OrderMessageListener.java",
+          "locationKind": "File",
+          "line": 4,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-appservice": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-container-apps": {
+              "effort": 5,
+              "severity": "optional"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "spring-boot-to-azure-spring-boot-version-01000",
+          "incidentId": "a235d666-8c49-4851-b359-8320b6a3b34e",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 40,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "mandatory"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "spring-boot-to-azure-spring-boot-version-01000",
+          "incidentId": "c451e529-b0ef-4b7d-88ff-0ea5285b8a3d",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 34,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "mandatory"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "spring-boot-to-azure-spring-boot-version-01000",
+          "incidentId": "8bb98d72-2f9b-403e-9029-e8392e6a136c",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 53,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "mandatory"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "azure-message-queue-amqp-02000",
+          "incidentId": "837dcc2e-3a78-40fc-b1a5-1a3f10e49b38",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 40,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-appservice": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-container-apps": {
+              "effort": 5,
+              "severity": "optional"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "azure-message-queue-amqp-02000",
+          "incidentId": "b80065a9-02aa-4b4d-adb3-44bdc62d401b",
+          "location": "",
+          "locationKind": "",
+          "targets": {
+            "azure-aks": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-appservice": {
+              "effort": 5,
+              "severity": "optional"
+            },
+            "azure-container-apps": {
+              "effort": 5,
+              "severity": "optional"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "spring-framework-version-01000",
+          "incidentId": "3b9da905-8b0d-4196-9c63-f11c9f5b5e2b",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 34,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "mandatory"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "spring-framework-version-01000",
+          "incidentId": "09d30a97-360b-48ae-9a68-033a263404d2",
+          "location": "pom.xml",
+          "locationKind": "File",
+          "line": 40,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-appservice": {
+              "effort": 8,
+              "severity": "mandatory"
+            },
+            "azure-container-apps": {
+              "effort": 8,
+              "severity": "mandatory"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=azure/springboot"
+          ]
+        },
+        {
+          "ruleId": "cra-hardcoded-credential-default-pwd-04000",
+          "incidentId": "95883720-40b7-47aa-87ad-8c33dfc45a6a",
+          "location": "src/main/resources/application.yml",
+          "locationKind": "File",
+          "line": 13,
+          "column": 0,
+          "targets": {
+            "azure-aks": {
+              "effort": 3,
+              "severity": "mandatory"
+            },
+            "azure-appservice": {
+              "effort": 3,
+              "severity": "mandatory"
+            },
+            "azure-container-apps": {
+              "effort": 3,
+              "severity": "mandatory"
+            }
+          },
+          "labels": [
+            "type=violation",
+            "ruleset=cloud-readiness"
+          ]
+        }
+      ]
+    }
+  ],
+  "rules": {
+    "azure-java-version-02000": {
+      "id": "azure-java-version-02000",
+      "description": "The application is not using the latest LTS Java version. It is recommended to consider upgrading to the latest LTS version to take advantage of the newest language features, performance improvements, and extended support timelines.\nUpgrading to the latest LTS version ensures your application benefits from the most recent security enhancements and a longer support lifecycle.",
+      "title": "Java Version is not the latest LTS",
+      "severity": "optional",
+      "effort": 8,
+      "labels": [
+        "target=azure-appservice",
+        "target=azure-aks",
+        "target=azure-container-apps",
+        "source",
+        "domain=java-upgrade",
+        "category=java-version-upgrade",
+        "version",
+        "os=windows",
+        "os=linux"
+      ]
+    },
+    "azure-message-queue-amqp-02000": {
+      "id": "azure-message-queue-amqp-02000",
+      "description": "The application uses Spring AMQP dependency. To migrate a Java application that uses Spring AMQP to Azure, you can follow these recommendations:\n\n * Provision **Azure Service Bus**: Use Azure Service Bus, a fully managed messaging service that offers reliable message queuing and publish/subscribe capabilities.\n\n * Update the application's **messaging connection** details: Modify the Java application's configuration updating the connection information and message queues/topics.\n\n * Configure Azure Service Bus **queues/topics**: Create appropriate queues or topics in Azure Service Bus to align with your application's messaging requirements. Configure access control and security settings as needed.",
+      "title": "Spring AMQP dependency found",
+      "severity": "optional",
+      "effort": 5,
+      "links": [
+        {
+          "url": "https://learn.microsoft.com/azure/service-bus-messaging",
+          "title": "Azure Service Bus documentation"
+        },
+        {
+          "url": "https://learn.microsoft.com/azure/developer/java/spring-framework/using-service-bus-in-spring-applications",
+          "title": "Use Azure Service Bus in Spring applications"
+        }
+      ],
+      "labels": [
+        "target=azure-appservice",
+        "target=azure-aks",
+        "target=azure-container-apps",
+        "source",
+        "domain=cloud-readiness",
+        "category=messaging-service-migration",
+        "message-queue",
+        "AMQP Client",
+        "os=windows",
+        "os=linux"
+      ]
+    },
+    "azure-message-queue-rabbitmq-01000": {
+      "id": "azure-message-queue-rabbitmq-01000",
+      "description": "The application uses RabbitMQ. To migrate a Java application that uses RabbitMQ to Azure, you can follow these recommendations:\n\n * Provision **Azure Service Bus**: Replace RabbitMQ with Azure Service Bus, a fully managed messaging service that offers reliable message queuing and publish/subscribe capabilities.\n\n * Update the application's **messaging connection** details: Modify the Java application's configuration updating the connection information and message queues/topics.\n\n * Configure Azure Service Bus **queues/topics**: Create appropriate queues or topics in Azure Service Bus to align with your application's messaging requirements. Configure access control and security settings as needed.",
+      "title": "RabbitMQ usage found",
+      "severity": "optional",
+      "effort": 5,
+      "links": [
+        {
+          "url": "https://learn.microsoft.com/azure/service-bus-messaging",
+          "title": "Azure Service Bus documentation"
+        },
+        {
+          "url": "https://learn.microsoft.com/azure/developer/java/spring-framework/using-service-bus-in-spring-applications",
+          "title": "Use Azure Service Bus in Spring applications"
+        }
+      ],
+      "labels": [
+        "target=azure-appservice",
+        "target=azure-aks",
+        "target=azure-container-apps",
+        "source",
+        "domain=cloud-readiness",
+        "category=messaging-service-migration",
+        "message-queue",
+        "RabbitMQ Client",
+        "os=windows",
+        "os=linux"
+      ]
+    },
+    "azure-password-01000": {
+      "id": "azure-password-01000",
+      "description": "Using clear passwords in property files is a security risk, as they can be easily compromised if the files are accessed by unauthorized individuals. To enhance the security of your application, it is recommended to employ secure credential management practices.\n\n * **Azure Key Vault**: Utilize Azure Key Vault to securely store and manage your application's passwords and other sensitive credentials. Azure Key Vault provides a centralized and highly secure location for storing secrets, keys, and certificates.\n\n * **Passwordless connections**: You can provide an additional layer of security and convenience for accessing resources in Azure by eliminating the need for passwords. This way you can reduce the risk of password-related vulnerabilities, such as weak passwords or password theft.",
+      "title": "Password found in configuration file",
+      "severity": "potential",
+      "effort": 3,
+      "links": [
+        {
+          "url": "https://learn.microsoft.com/azure/key-vault",
+          "title": "Azure Key Vault documentation"
+        },
+        {
+          "url": "https://learn.microsoft.com/azure/developer/intro/passwordless-overview",
+          "title": "Passwordless connections for Azure services"
+        },
+        {
+          "url": "https://learn.microsoft.com/azure/developer/java/migration/migrate-spring-boot-to-azure-container-apps#inventory-configuration-sources-and-secrets",
+          "title": "Password found in configuration file"
+        },
+        {
+          "url": "https://docs.microsoft.com/azure/developer/java/spring-framework/configure-spring-boot-starter-java-app-with-azure-key-vault",
+          "title": "Read a secret from Azure Key Vault in a Spring Boot application"
+        },
+        {
+          "url": "https://search.maven.org/artifact/com.azure.spring/azure-spring-boot-starter-keyvault-secrets",
+          "title": "Azure Spring Boot Starter for Azure Key Vault Secrets"
+        }
+      ],
+      "labels": [
+        "source",
+        "target=azure-appservice",
+        "target=azure-aks",
+        "target=azure-container-apps",
+        "domain=cloud-readiness",
+        "category=local-credential",
+        "password",
+        "security",
+        "os=windows",
+        "os=linux"
+      ]
+    },
+    "cra-hardcoded-credential-default-pwd-04000": {
+      "id": "cra-hardcoded-credential-default-pwd-04000",
+      "description": "**EU Cyber Resilience Act (Annex I, Part I, Section 2(b))** requires a **secure by default configuration**. The use of default, well-known, or trivial passwords violates the secure-by-default principle.\n\nETSI EN 303 645 (referenced standard for CRA compliance) explicitly prohibits universal default passwords in Provision 5.1-1.\n\n**Recommended actions:**\n* Remove all default/well-known passwords from code and configuration.\n* Require unique, strong passwords during initial setup.\n* Use generated secrets that are unique per deployment.\n* Implement password complexity requirements.",
+      "title": "CRA: Default or well-known password detected",
+      "severity": "mandatory",
+      "effort": 3,
+      "links": [
+        {
+          "url": "https://eur-lex.europa.eu/eli/reg/2024/2847/oj",
+          "title": "EU Cyber Resilience Act - Regulation (EU) 2024/2847"
+        },
+        {
+          "url": "https://www.etsi.org/deliver/etsi_en/303600_303699/303645/02.01.01_60/en_303645v020101p.pdf",
+          "title": "ETSI EN 303 645 - No Universal Default Passwords"
+        }
+      ],
+      "labels": [
+        "source",
+        "domain=cloud-readiness",
+        "category=hardcoded-credential",
+        "security",
+        "target=azure-aks",
+        "target=azure-container-apps",
+        "target=azure-appservice",
+        "os=windows",
+        "os=linux"
+      ]
+    },
+    "spring-boot-to-azure-spring-boot-version-01000": {
+      "id": "spring-boot-to-azure-spring-boot-version-01000",
+      "description": "The application is using a Spring Boot version that has reached its End of OSS Support.\nWith the officially supported new versions from Spring, you can get the best experience. Here are some steps you can take to update your application to the latest version of Spring Boot:\n\n* Choose a **supported Spring Boot version**: Check out Spring Boot Support Versions and determine the most suitable supported Spring Boot version.\n\n* **Update Spring Boot version**: Update the Spring Boot version of your application. There are automated tools like Rewrite to help you with the migration.\n\n* **Address code compatibility**: Review your application's codebase for any potential compatibility issues with the target Spring Boot version. Update deprecated APIs or features, address any language or library changes, and ensure that your code follows best practices and standards.\n\n* **Test thoroughly**: Execute a comprehensive testing process to verify the compatibility and functionality of your application with the new Spring Boot version. Perform unit tests, integration tests, and system tests to validate that all components and dependencies work as expected.",
+      "title": "Spring Boot Version Has Reached the End of OSS Support",
+      "severity": "mandatory",
+      "effort": 8,
+      "links": [
+        {
+          "url": "https://learn.microsoft.com/azure/developer/java/migration/migrate-spring-boot-to-azure-container-apps",
+          "title": "Migrate Spring Boot applications to Azure Container Apps"
+        },
+        {
+          "url": "https://learn.microsoft.com/azure/container-apps/java-microservice-get-started?tabs=azure-cli",
+          "title": "Launch your first Java microservice application with managed Java components in Azure Container Apps"
+        },
+        {
+          "url": "https://spring.io/projects/spring-boot/#support",
+          "title": "Spring Boot Supported Versions"
+        },
+        {
+          "url": "https://github.com/spring-projects/spring-boot/wiki/Supported-Versions",
+          "title": "Spring Boot Support Policy"
+        }
+      ],
+      "labels": [
+        "source=springboot",
+        "target=azure-appservice",
+        "target=azure-aks",
+        "target=azure-container-apps",
+        "domain=java-upgrade",
+        "category=framework-upgrade",
+        "version",
+        "os=windows",
+        "os=linux"
+      ]
+    },
+    "spring-framework-version-01000": {
+      "id": "spring-framework-version-01000",
+      "description": "Your application is using a Spring Framework version that has reached its End of OSS Support.\nUpgrading to a supported version ensures better performance, security, and compatibility with modern tools.\n  1. Pick a Supported Version: Review the Spring Framework support policy and choose an actively supported version.\n  2. Update Your Project: Change the Spring Framework version in your pom.xml or build.gradle.\n  3. Fix Compatibility Issues: Update deprecated code, replace removed features, and ensure dependencies are compatible with the new Spring Framework version.\n  4. Thoroughly Test: Run unit, integration, and end-to-end tests to make sure everything still works after the upgrade.",
+      "title": "Spring Framework Version Has Reached the End of OSS Support",
+      "severity": "mandatory",
+      "effort": 8,
+      "links": [
+        {
+          "url": "https://spring.io/projects/spring-framework#support",
+          "title": "Spring Framework Supported Versions"
+        },
+        {
+          "url": "https://github.com/spring-projects/spring-framework/wiki/Spring-Framework-Versions",
+          "title": "Spring Framework Support Policy"
+        }
+      ],
+      "labels": [
+        "source=spring",
+        "target=azure-appservice",
+        "target=azure-aks",
+        "target=azure-container-apps",
+        "domain=java-upgrade",
+        "category=framework-upgrade",
+        "version",
+        "os=windows",
+        "os=linux"
+      ]
+    }
+  },
+  "security": []
+}
