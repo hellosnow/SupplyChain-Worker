@@ -1,19 +1,20 @@
 package com.acme.scm.worker.listener;
 
+import com.azure.spring.messaging.implementation.annotation.EnableAzureMessaging;
+import com.azure.spring.messaging.servicebus.implementation.core.annotation.ServiceBusListener;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 /**
  * TECH DEBT:
- * - Uses RabbitMQ (should migrate to Azure Service Bus with custom messaging API)
  * - Uses SLF4J instead of InternalLogger
  */
 @Slf4j
 @Component
+@EnableAzureMessaging
 public class OrderMessageListener {
 
-    @RabbitListener(queues = "${app.messaging.queue.order-created}")
+    @ServiceBusListener(destination = "${app.messaging.queue.order-created}")
     public void handleOrderCreated(String message) {
         log.info("📬 Received order created notification");
         log.info("Message: {}", message);
@@ -28,7 +29,7 @@ public class OrderMessageListener {
         }
     }
 
-    @RabbitListener(queues = "${app.messaging.queue.inventory-alert}")
+    @ServiceBusListener(destination = "${app.messaging.queue.inventory-alert}")
     public void handleInventoryAlert(String message) {
         log.warn("⚠️  Received inventory alert");
         log.warn("Message: {}", message);
@@ -42,7 +43,7 @@ public class OrderMessageListener {
         }
     }
 
-    @RabbitListener(queues = "${app.messaging.queue.approval-pending}")
+    @ServiceBusListener(destination = "${app.messaging.queue.approval-pending}")
     public void handleApprovalPending(String message) {
         log.info("⏳ Received approval pending notification");
         log.info("Message: {}", message);

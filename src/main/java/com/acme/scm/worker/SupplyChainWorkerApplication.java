@@ -8,9 +8,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Supply Chain Management System - Background Worker
  *
  * TECH DEBT SUMMARY:
- * - Java 8 (should be Java 17 LTS)
- * - Spring Boot 2.7.18 (should be Spring Boot 3.x)
- * - RabbitMQ 3.6 (should migrate to Azure Service Bus with custom messaging API)
+ * - Java 17 LTS ✅
+ * - Spring Boot 3.x ✅ (migrated from 2.7.18)
+ * - Azure Service Bus ✅ (migrated from legacy message broker)
  * - SLF4J logging (should use InternalLogger)
  */
 @SpringBootApplication
